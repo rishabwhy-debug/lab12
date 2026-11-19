@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickKart - Online Shopping</title>
+<style>
+  :root { --brand:#4f46e5; --brand-d:#3730a3; --ink:#111827; --muted:#6b7280; --bg:#f3f4f6; --card:#fff; --ok:#16a34a; --err:#dc2626; --line:#e5e7eb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--ink);
+         background:linear-gradient(135deg,#e0e7ff 0%,#fce7f3 50%,#fef3c7 100%) fixed; }
+  header { background:var(--brand); color:#fff; position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+  .bar { max-width:1100px; margin:auto; display:flex; align-items:center; gap:16px; padding:12px 16px; flex-wrap:wrap; }
+  .logo { font-size:1.4rem; font-weight:800; letter-spacing:.5px; cursor:pointer; }
+  nav { display:flex; gap:4px; flex-wrap:wrap; margin-left:auto; align-items:center; }
+  nav a { color:#fff; text-decoration:none; padding:8px 12px; border-radius:8px; font-size:.95rem; cursor:pointer; }
+  nav a:hover, nav a.active { background:rgba(255,255,255,.18); }
+  .badge { background:#fbbf24; color:#111; border-radius:999px; padding:1px 8px; font-size:.75rem; font-weight:700; margin-left:4px; }
+  main { max-width:1100px; margin:24px auto; padding:0 16px; min-height:70vh; }
+  footer { text-align:center; color:var(--muted); font-size:.85rem; padding:24px; }
+  h1 { margin:0 0 16px; font-size:1.6rem; }
+  .page { display:none; } .page.show { display:block; }
+  .hero { background:linear-gradient(120deg,var(--brand),#7c3aed); color:#fff; border-radius:16px; padding:48px 32px; }
+  .hero h1 { font-size:2.2rem; margin-bottom:8px; }
+  .btn { display:inline-block; border:0; background:var(--brand); color:#fff; padding:10px 18px; border-radius:8px; font-size:.95rem; font-weight:600; cursor:pointer; }
+  .btn:hover { background:var(--brand-d); }
+  .btn.alt { background:#fff; color:var(--brand); }
+  .btn.sec { background:#e5e7eb; color:var(--ink); }
+  .btn.sm { padding:6px 12px; font-size:.85rem; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; }
+  .card { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  .pimg { font-size:3.5rem; text-align:center; background:#eef2ff; border-radius:10px; padding:18px 0; margin-bottom:10px; }
+  .pname { font-weight:700; } .pcat { color:var(--muted); font-size:.8rem; }
+  .price { font-size:1.15rem; font-weight:800; margin:6px 0; }
+  .desc { color:var(--muted); font-size:.85rem; min-height:36px; }
+  .tools { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  input, select, textarea { padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:1rem; font-family:inherit; width:100%; }
+  .tools input, .tools select { width:auto; flex:1; min-width:160px; }
+  label { display:block; margin:12px 0 4px; font-weight:600; font-size:.88rem; }
+  .form { max-width:440px; margin:auto; }
+  .msg { margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.9rem; display:none; }
+  .msg.err { display:block; background:#fef2f2; color:var(--err); border:1px solid #fecaca; }
+  .msg.ok { display:block; background:#f0fdf4; color:var(--ok); border:1px solid #bbf7d0; }
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; }
+  th, td { padding:12px; text-align:left; border-bottom:1px solid var(--line); }
+  th { background:#f9fafb; font-size:.85rem; }
+  .qty { display:inline-flex; align-items:center; gap:8px; }
+  .qty button { width:28px; height:28px; border:1px solid #d1d5db; background:#fff; border-radius:6px; cursor:pointer; }
+  .total { text-align:right; font-size:1.2rem; font-weight:800; margin:16px 0; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .center { text-align:center; }
+  .tick { width:70px; height:70px; border-radius:50%; background:#dcfce7; color:var(--ok); font-size:2.2rem; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; }
+  pre { background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; overflow:auto; font-size:.8rem; text-align:left; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:10px 18px; border-radius:8px; opacity:0; transition:.3s; pointer-events:none; z-index:20; }
+  .toast.on { opacity:1; }
+  @media (max-width:600px) { .two { grid-template-columns:1fr; } th:nth-child(2), td:nth-child(2) { display:none; } }
+</style>
+</head>
+<body>
+
+<!-- ============ XML DATA: product catalogue ============ -->
+<script type="application/xml" id="catalogXML">
+<catalog>
+  <product id="1"><name>Wireless Headphones</name><category>Electronics</category><price>1999</price><stock>12</stock><icon>🎧</icon><description>Bluetooth over-ear headphones with 30-hour battery.</description></product>
+  <product id="2"><name>Smart Watch</name><category>Electronics</category><price>3499</price><stock>8</stock><icon>⌚</icon><description>Fitness tracking, heart-rate monitor and notifications.</description></product>
+  <product id="3"><name>Running Shoes</name><category>Fashion</category><price>2499</price><stock>20</stock><icon>👟</icon><description>Lightweight breathable shoes for daily running.</description></product>
+  <product id="4"><name>Backpack</name><category>Fashion</category><price>1299</price><stock>15</stock><icon>🎒</icon><description>Water-resistant 25L backpack with laptop sleeve.</description></product>
+  <product id="5"><name>Coffee Maker</name><category>Home</category><price>2799</price><stock>6</stock><icon>☕</icon><description>Automatic drip coffee maker, 1.2 litre capacity.</description></product>
+  <product id="6"><name>Table Lamp</name><category>Home</category><price>799</price><stock>25</stock><icon>💡</icon><description>LED desk lamp with three brightness levels.</description></product>
+  <product id="7"><name>Programming Book</name><category>Books</category><price>599</price><stock>30</stock><icon>📘</icon><description>Learn web development step by step.</description></product>
+  <product id="8"><name>Notebook Set</name><category>Books</category><price>249</price><stock>50</stock><icon>📓</icon><description>Pack of 5 ruled notebooks, 200 pages each.</description></product>
+</catalog>
+</script>
+
+<header>
+  <div class="bar">
+    <div class="logo" onclick="go('home')">🛒 QuickKart</div>
+    <nav id="nav">
+      <a data-p="home" onclick="go('home')">Home</a>
+      <a data-p="products" onclick="go('products')">Products</a>
+      <a data-p="cart" onclick="go('cart')">Cart<span class="badge" id="cartCount">0</span></a>
+      <a data-p="contact" onclick="go('contact')">Contact</a>
+      <a data-p="login" id="navLogin" onclick="go('login')">Login</a>
+      <a data-p="register" id="navReg" onclick="go('register')">Register</a>
+      <a id="navUser" style="display:none" onclick="logout()"></a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- HOME PAGE -->
+  <section class="page" id="home">
+    <div class="hero">
+      <h1>Shop smart. Shop QuickKart.</h1>
+      <p>Electronics, fashion, home and books at honest prices.</p>
+      <button class="btn alt" onclick="go('products')">Start shopping</button>
+    </div>
+    <h1 style="margin-top:28px">Featured products</h1>
+    <div class="grid" id="featured"></div>
+  </section>
+
+  <!-- PRODUCTS PAGE -->
+  <section class="page" id="products">
+    <h1>Products</h1>
+    <div class="tools">
+      <input id="search" placeholder="Search products..." oninput="renderProducts()">
+      <select id="catFilter" onchange="renderProducts()"></select>
+      <select id="sortBy" onchange="renderProducts()">
+        <option value="">Sort by</option>
+        <option value="low">Price: low to high</option>
+        <option value="high">Price: high to low</option>
+        <option value="name">Name</option>
+      </select>
+    </div>
+    <div class="grid" id="productGrid"></div>
+  </section>
+
+  <!-- CART PAGE -->
+  <section class="page" id="cart">
+    <h1>Your cart</h1>
+    <div id="cartBody"></div>
+  </section>
+
+  <!-- LOGIN PAGE -->
+  <section class="page" id="login">
+    <div class="card form">
+      <h1>Login</h1>
+      <label for="lEmail">Email</label><input id="lEmail" type="email">
+      <label for="lPass">Password</label><input id="lPass" type="password">
+      <button class="btn" style="width:100%;margin-top:16px" onclick="doLogin()">Login</button>
+      <div class="msg" id="lMsg"></div>
+      <p class="center">New here? <a href="#" onclick="go('register');return false">Create an account</a></p>
+    </div>
+  </section>
+
+  <!-- REGISTRATION PAGE -->
+  <section class="page" id="register">
+    <div class="card form">
+      <h1>Create account</h1>
+      <label for="rName">Full name</label><input id="rName">
+      <label for="rEmail">Email</label><input id="rEmail" type="email">
+      <label for="rPass">Password (min 6 characters)</label><input id="rPass" type="password">
+      <label for="rPass2">Confirm password</label><input id="rPass2" type="password">
+      <button class="btn" style="width:100%;margin-top:16px" onclick="doRegister()">Register</button>
+      <div class="msg" id="rMsg"></div>
+    </div>
+  </section>
+
+  <!-- CHECKOUT / PAYMENT PAGE -->
+  <section class="page" id="checkout">
+    <div class="card form" style="max-width:560px">
+      <h1>Checkout</h1>
+      <div id="coSummary"></div>
+      <label for="cName">Name</label><input id="cName">
+      <label for="cAddr">Delivery address</label><textarea id="cAddr" rows="3"></textarea>
+      <label for="cPhone">Phone (10 digits)</label><input id="cPhone" inputmode="numeric" maxlength="10">
+      <label for="cPay">Payment method</label>
+      <select id="cPay" onchange="togglePay()">
+        <option value="COD">Cash on delivery</option>
+        <option value="UPI">UPI</option>
+        <option value="Card">Credit / debit card</option>
+      </select>
+      <div id="upiBox" style="display:none"><label for="cUpi">UPI ID</label><input id="cUpi" placeholder="name@bank"></div>
+      <div id="cardBox" style="display:none">
+        <label for="cCard">Card number (16 digits)</label><input id="cCard" inputmode="numeric" maxlength="16">
+        <div class="two">
+          <div><label for="cExp">Expiry (MM/YY)</label><input id="cExp" placeholder="08/29" maxlength="5"></div>
+          <div><label for="cCvv">CVV</label><input id="cCvv" type="password" inputmode="numeric" maxlength="3"></div>
+        </div>
+      </div>
+      <button class="btn" style="width:100%;margin-top:16px" onclick="placeOrder()">Place order</button>
+      <div class="msg" id="cMsg"></div>
+    </div>
+  </section>
+
+  <!-- ORDER CONFIRMATION PAGE -->
+  <section class="page" id="confirm">
+    <div class="card form center" style="max-width:640px">
+      <div class="tick">✓</div>
+      <h1>Order placed!</h1>
+      <p id="confText"></p>
+      <p style="text-align:left;font-weight:600">Order record (XML):</p>
+      <pre id="orderXml"></pre>
+      <button class="btn" onclick="go('products')">Continue shopping</button>
+    </div>
+  </section>
+
+  <!-- CONTACT PAGE -->
+  <section class="page" id="contact">
+    <div class="card form">
+      <h1>Contact us</h1>
+      <label for="mName">Name</label><input id="mName">
+      <label for="mEmail">Email</label><input id="mEmail" type="email">
+      <label for="mText">Message</label><textarea id="mText" rows="4"></textarea>
+      <button class="btn" style="width:100%;margin-top:16px" onclick="sendContact()">Send message</button>
+      <div class="msg" id="mMsg"></div>
+    </div>
+  </section>
+
+</main>
+<footer>© 2026 QuickKart · Demo shop built with HTML, CSS, JavaScript and XML</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const money = n => "₹" + Number(n).toLocaleString("en-IN");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* storage with memory fallback (some preview panes block localStorage) */
+const mem = {};
+function load(k, def) { try { const v = localStorage.getItem(k); if (v) return JSON.parse(v); } catch (e) {} return k in mem ? mem[k] : def; }
+function save(k, v) { mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+function toast(t) { const e = $("toast"); e.textContent = t; e.classList.add("on"); setTimeout(() => e.classList.remove("on"), 1800); }
+function say(id, text, ok) { const m = $(id); m.textContent = text; m.className = "msg " + (ok ? "ok" : "err"); }
+
+/* ---------- read the XML catalogue ---------- */
+const xmlDoc = new DOMParser().parseFromString($("catalogXML").textContent.trim(), "application/xml");
+const products = Array.from(xmlDoc.getElementsByTagName("product")).map(p => {
+  const t = n => p.getElementsByTagName(n)[0].textContent.trim();
+  return { id: p.getAttribute("id"), name: t("name"), category: t("category"), price: +t("price"), stock: +t("stock"), icon: t("icon"), desc: t("description") };
+});
+const byId = id => products.find(p => p.id === id);
+
+/* ---------- state ---------- */
+let cart = load("qk_cart", {});          // { productId: qty }
+let session = load("qk_session", null);  // { name, email }
+
+/* ---------- routing ---------- */
+const PROTECTED = ["checkout"];
+function go(page) {
+  if (PROTECTED.includes(page) && !session) { toast("Please login to continue"); page = "login"; }
+  document.querySelectorAll(".page").forEach(s => s.classList.toggle("show", s.id === page));
+  document.querySelectorAll("nav a[data-p]").forEach(a => a.classList.toggle("active", a.dataset.p === page));
+  if (page === "home") renderFeatured();
+  if (page === "products") renderProducts();
+  if (page === "cart") renderCart();
+  if (page === "checkout") renderCheckout();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- product cards ---------- */
+function card(p) {
+  return `<div class="card"><div class="pimg">${p.icon}</div>
+    <div class="pname">${esc(p.name)}</div><div class="pcat">${esc(p.category)}</div>
+    <div class="desc">${esc(p.desc)}</div>
+    <div class="price">${money(p.price)}</div>
+    <button class="btn sm" onclick="addToCart('${p.id}')">Add to cart</button></div>`;
+}
+function renderFeatured() { $("featured").innerHTML = products.slice(0, 4).map(card).join(""); }
+
+function renderProducts() {
+  const sel = $("catFilter");
+  if (!sel.options.length) {
+    sel.innerHTML = '<option value="">All categories</option>' +
+      [...new Set(products.map(p => p.category))].map(c => `<option>${esc(c)}</option>`).join("");
+  }
+  const q = $("search").value.toLowerCase(), cat = sel.value, sort = $("sortBy").value;
+  let list = products.filter(p => (!cat || p.category === cat) && (p.name + p.desc).toLowerCase().includes(q));
+  if (sort === "low") list.sort((a, b) => a.price - b.price);
+  if (sort === "high") list.sort((a, b) => b.price - a.price);
+  if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
+  $("productGrid").innerHTML = list.length ? list.map(card).join("") : "<p>No products found.</p>";
+}
+
+/* ---------- cart ---------- */
+function cartCount() { return Object.values(cart).reduce((a, b) => a + b, 0); }
+function cartTotal() { return Object.entries(cart).reduce((s, [id, q]) => s + byId(id).price * q, 0); }
+function updateBadge() { $("cartCount").textContent = cartCount(); }
+function addToCart(id) {
+  const p = byId(id);
+  if ((cart[id] || 0) >= p.stock) return toast("Only " + p.stock + " in stock");
+  cart[id] = (cart[id] || 0) + 1; save("qk_cart", cart); updateBadge(); toast(p.name + " added to cart");
+}
+function changeQty(id, d) {
+  const n = (cart[id] || 0) + d;
+  if (n > byId(id).stock) return toast("Stock limit reached");
+  if (n <= 0) delete cart[id]; else cart[id] = n;
+  save("qk_cart", cart); updateBadge(); renderCart();
+}
+function renderCart() {
+  const ids = Object.keys(cart);
+  if (!ids.length) { $("cartBody").innerHTML = '<div class="card center"><p>Your cart is empty.</p><button class="btn" onclick="go(\'products\')">Browse products</button></div>'; return; }
+  $("cartBody").innerHTML = `<table><tr><th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th></th></tr>` +
+    ids.map(id => { const p = byId(id), q = cart[id]; return `<tr><td>${p.icon} ${esc(p.name)}</td><td>${money(p.price)}</td>
+      <td><span class="qty"><button onclick="changeQty('${id}',-1)">−</button>${q}<button onclick="changeQty('${id}',1)">+</button></span></td>
+      <td>${money(p.price * q)}</td><td><button class="btn sec sm" onclick="changeQty('${id}',-99)">Remove</button></td></tr>`; }).join("") +
+    `</table><div class="total">Total: ${money(cartTotal())}</div>
+     <div style="text-align:right"><button class="btn sec" onclick="go('products')">Continue shopping</button>
+     <button class="btn" onclick="go('checkout')">Proceed to checkout</button></div>`;
+}
+
+/* ---------- auth ---------- */
+function users() { return load("qk_users", []); }
+function refreshNav() {
+  $("navLogin").style.display = $("navReg").style.display = session ? "none" : "";
+  $("navUser").style.display = session ? "" : "none";
+  if (session) $("navUser").textContent = "Hi, " + session.name.split(" ")[0] + " (Logout)";
+}
+function doRegister() {
+  const name = $("rName").value.trim(), email = $("rEmail").value.trim().toLowerCase(), p1 = $("rPass").value, p2 = $("rPass2").value;
+  if (!name || !email || !p1) return say("rMsg", "Please fill in all fields.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return say("rMsg", "Enter a valid email address.");
+  if (p1.length < 6) return say("rMsg", "Password must be at least 6 characters.");
+  if (p1 !== p2) return say("rMsg", "Passwords do not match.");
+  const list = users();
+  if (list.some(u => u.email === email)) return say("rMsg", "This email is already registered.");
+  list.push({ name, email, pass: p1 }); save("qk_users", list);   // demo only: a real shop must hash passwords on a server
+  say("rMsg", "Account created. You can now login.", true);
+  setTimeout(() => go("login"), 900);
+}
+function doLogin() {
+  const email = $("lEmail").value.trim().toLowerCase(), pass = $("lPass").value;
+  const u = users().find(x => x.email === email && x.pass === pass);
+  if (!u) return say("lMsg", "Failed to login: invalid email or password.");
+  session = { name: u.name, email: u.email }; save("qk_session", session); refreshNav();
+  $("lPass").value = ""; toast("Welcome, " + u.name);
+  go(cartCount() ? "checkout" : "products");
+}
+function logout() { session = null; save("qk_session", null); refreshNav(); toast("Logged out"); go("home"); }
+
+/* ---------- checkout ---------- */
+function renderCheckout() {
+  if (!cartCount()) { go("cart"); return; }
+  $("coSummary").innerHTML = Object.entries(cart).map(([id, q]) => `<div style="display:flex;justify-content:space-between"><span>${byId(id).icon} ${esc(byId(id).name)} × ${q}</span><span>${money(byId(id).price * q)}</span></div>`).join("") +
+    `<div class="total">Total: ${money(cartTotal())}</div>`;
+  if (!$("cName").value) $("cName").value = session.name;
+  $("cMsg").className = "msg";
+}
+function togglePay() { const v = $("cPay").value; $("upiBox").style.display = v === "UPI" ? "" : "none"; $("cardBox").style.display = v === "Card" ? "" : "none"; }
+function placeOrder() {
+  const name = $("cName").value.trim(), addr = $("cAddr").value.trim(), phone = $("cPhone").value.trim(), pay = $("cPay").value;
+  if (!name || !addr) return say("cMsg", "Enter your name and delivery address.");
+  if (!/^\d{10}$/.test(phone)) return say("cMsg", "Phone number must be 10 digits.");
+  if (pay === "UPI" && !/^[\w.\-]+@[\w]+$/.test($("cUpi").value.trim())) return say("cMsg", "Enter a valid UPI ID.");
+  if (pay === "Card") {
+    if (!/^\d{16}$/.test($("cCard").value.trim())) return say("cMsg", "Card number must be 16 digits.");
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test($("cExp").value.trim())) return say("cMsg", "Expiry must be MM/YY.");
+    if (!/^\d{3}$/.test($("cCvv").value.trim())) return say("cMsg", "CVV must be 3 digits.");
+  }
+  const orderId = "QK" + Date.now().toString().slice(-8);
+
+  // Build the order as an XML document
+  const doc = document.implementation.createDocument("", "order", null), root = doc.documentElement;
+  const add = (parent, tag, text) => { const e = doc.createElement(tag); if (text !== undefined) e.textContent = text; parent.appendChild(e); return e; };
+  root.setAttribute("id", orderId);
+  add(root, "customer", name); add(root, "email", session.email); add(root, "address", addr); add(root, "payment", pay);
+  const items = add(root, "items");
+  Object.entries(cart).forEach(([id, q]) => { const it = add(items, "item"); it.setAttribute("id", id); add(it, "name", byId(id).name); add(it, "quantity", q); add(it, "price", byId(id).price); });
+  add(root, "total", cartTotal());
+  const xml = new XMLSerializer().serializeToString(doc).replace(/></g, ">\n<");
+
+  const orders = load("qk_orders", []); orders.push({ orderId, xml }); save("qk_orders", orders);
+  $("confText").textContent = `Thank you, ${name}! Your order ${orderId} of ${money(cartTotal())} (${pay}) has been placed.`;
+  $("orderXml").textContent = xml;
+  cart = {}; save("qk_cart", cart); updateBadge();
+  go("confirm");
+}
+
+/* ---------- contact ---------- */
+function sendContact() {
+  const n = $("mName").value.trim(), e = $("mEmail").value.trim(), t = $("mText").value.trim();
+  if (!n || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) || !t) return say("mMsg", "Please enter your name, a valid email and a message.");
+  say("mMsg", "Thanks " + n + "! We will reply soon.", true);
+  $("mName").value = $("mEmail").value = $("mText").value = "";
+}
+
+/* ---------- start ---------- */
+updateBadge(); refreshNav(); go("home");
+</script>
+</body>
+</html>
